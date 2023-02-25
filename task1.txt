@@ -1,0 +1,242 @@
+use test
+db.users.insert({username: "jones"})
+db.users.find()
+//save() not work use insert
+db.users.insert({username: "smith"})
+db.users.count()
+idJonesOne = db.users.findOne({username: "jones"})._id
+db.users.find({_id: idJonesOne})
+
+db.users.update(
+    {
+        username: "smith",
+    },
+    {
+        $set: {
+            country: "canada"
+        }
+    }
+)
+
+db.users.update(
+    {
+        username: "smith",
+    },
+    {
+        $set: {
+            favorities: {
+                cities: ["chicago", "rome"],
+                movies: ["star wars", "the godfather"]
+            }
+        },
+    }
+)
+
+db.users.update({username:"smith"}, {$unset: {country:true}})
+
+db.users.update(
+    {username:"jones"},
+    {$set: {favorities: {movies:["rocky", "winter"]}}})
+
+db.users.find({"favorities.movies" :"the godfather"})
+
+db.users.update(
+    {"favorities.movies":"the godfather"},
+    {$addToSet: {"favorities.movies": "matrix2"}}, false, true
+)
+
+db.users.remove({"favorities.cities":"rome"})
+
+for(i=0; i<2000; i++) {db.numbers.insert({num:i});}
+
+db.numbers.count()
+db.numbers.find({num:500})
+db.numbers.find({num: {$gt:159995}})
+db.numbers.find({num: {$gt: 20, $lt: 25}})
+db.numbers.find({num: {$gt: 159995}}).explain()
+db.numbers.ensureIndex({num:1})
+db.numbers.getIndexes()
+
+show dbs
+show collections
+db.stats()
+db.help()
+db.users.help()
+db.numbers.insert
+
+db.users.insert({username:"tom", age:28, languages:["english", "german" ]})
+
+document=({ username:"bill", age:32, languages:["english", "french"]})
+db.users.insertOne(document)
+
+db.createCollection("profile", {capped:true, size:500, max:150})
+
+db.users.insert({username:"tom", age:32,languages:["english"]})
+
+db.users.find({username:"tom"})
+
+db.users.find({languages: "german"})
+db.users.find({username:"tom", age:32})
+
+db.users.find({username:"tom"}, {age:1})
+
+db.users.find({username:"tom"}, {age:true, _id:false})
+
+db.users.insert({username:"alex", age:28, company: {name:"microsoft", country:"usa"}})
+
+db.users.find()
+db.users.find().limit(3)
+db.users.find().skip(2)
+
+db.users.find().sort({username:1})
+
+db.users.find().sort({username:1}).skip(1).limit(1)
+//natural - date added
+db.users.find().sort({$natural:-1}).limit(3)
+
+db.users.find({username:"tom"}, {languages: {$slice: 1}})
+db.users.find({username:"tom"}, {languages: {$slice: [-1,1]}})
+db.users.find({}, {username:true})
+db.users.find({username:1})
+db.users.find({username:"tom"}).count()
+db.users.find({username:"tom"}).skip(2).count(true)
+
+db.users.distinct("username")
+
+db.profile.remove({})
+db.profile.drop()
+
+db.users.find({username:"tom"}, {languages: {$slice:1}})
+db.users.find({username:"tom"}, {languages: {$slice:[-1,1]}})
+db.users.find({age: {$ne:22}})
+
+db.users.find({age: {$in: [22,32]}})
+db.users.find({age: {$nin: [22,32]}})
+db.users.find({languages: {$all:["english", "french"]}})
+db.users.find({$or: [{username:"tom"},{age:22}]})
+
+db.users.find(
+    {
+        username:"tom",
+        $or: [
+            {age:22},
+            {languages:"french"}
+        ]
+    }
+)
+
+db.users.find({languages: {$size:2}})
+
+db.users.find({company:{$exists:true}})
+
+db.users.find({username: {$regex: "^b"}})
+
+db.users.insert(
+    {
+        username: "eugene",
+        age: 29,
+        languages: ["english","spanish", "french"],
+    }
+)
+
+db.users.update(
+    {
+        username: "tom"
+    },
+    {
+        username: "tom",
+        age: 25,
+        married: false
+    },
+    {
+        "upsert": true
+    }
+)
+
+db.users.update(
+    {
+        username: "tom",
+    },
+    {
+        $inc: {
+            salary: 100
+        }
+    }
+)
+
+db.users.update(
+    {
+        username: "tom",
+    },
+    {
+        $unset: {
+            salary: 1
+        }
+    }
+)
+
+db.users.update(
+    {
+        username: "tom",
+    },
+    {
+        $unset: {
+            salary: 1,
+            age: 1
+        }
+    }
+)
+
+db.users.update(
+    {
+        username: "tom",
+    },
+    {
+        $addToSet: {
+            languages: {
+                $each: ["russian", "italian"]
+            }
+        }
+    }
+)
+
+db.users.update(
+    {
+        username: "tom",
+    },
+    {
+        $pop: {
+            languages: -1
+        }
+    }
+)
+
+db.users.update(
+    {
+        username: "tom",
+    },
+    {
+        $pull: {
+            languages: "english"
+        }
+    }
+)
+
+db.users.update(
+    {
+        username: "tom",
+    },
+    {
+        $pullAll: {
+            languages: ["english", "russian", "italian"]
+        }
+    }
+)
+
+db.users.remove({age:{$lt:30}})
+
+db.users.remove({
+    username: "tom"
+}, true)
+
+
