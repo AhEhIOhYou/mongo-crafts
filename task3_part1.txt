@@ -1,4 +1,3 @@
-/* MongoDB */
 /* 1. Найти все заказы данного пользователя */
 let userId = db.users.aggregate([{$sample: {size: 1}}]).toArray()[0]._id
 print(userId)
