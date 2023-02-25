@@ -1,0 +1,57 @@
+/* 1. Обновить почтовый индекс пользователя, используя модификацию путем замены. */
+let userId = db.users.aggregate([
+    {$match: {"addresses.name": "work"}},
+    {$sample: {size: 1}},
+]).next()._id;
+print(userId)
+db.users.updateOne(
+    {_id: userId, "addresses.name": "work"},
+    {$set: {"addresses.$.zip": "12345"}}
+);
+/* 2. Обновить емейл пользователя путем направленного обновления. */
+db.users.updateOne(
+    {_id: userId},
+    {$set: {"email": "ada" + Math.floor(Math.random() * 1000) + "@example.com"}}
+);
+/* 3.Добавить новый адрес в список адресов путем замены документа. */
+
+/* 4. Добавить новый адрес в список адресов путем направленного обновления. */
+
+/* 5. Обновить средний'рейтинг товара при добавлении нового отзыва. */
+
+/* 6.Обновить название категории, включая документы -потомки. */
+
+/* 9. Перевести заказ из состояния "CART" в состояние "PENDING" . */
+let orderId = db.orders.aggregate([
+    {$match: {status: "CART"}},
+    {$sample: {size: 1}},
+]).next()._id;
+print(orderId)
+db.orders.updateOne(
+    {_id: orderId},
+    {$set: {status: "PENDING"}}
+)
+/* 10. Добавить новые категории для товара sku: 5532 */
+let categories = db.categories.aggregate([
+    {$sample: {size: 2}},
+]).toArray().map(c => c._id);
+print(categories)
+db.products.updateOne(
+    {sku: "642047"},
+    {$addToSet: {category_ids: {$each: categories}}}
+)
+db.products.findOne({"sku": "642047"})
+/* 12. Изменить количество товара sku:642047 в заказе на 5 */
+db.orders.findOne({"lines_items.sku": "642047"})
+db.orders.updateOne(
+    {"lines_items.sku": "642047"},
+    {$set: {"lines_items.$.quantity": 5}}
+)
+db.orders.findOne({"lines_items.sku": "642047"})
+/* 13. Удалить отзывы конкретного пользователя. */
+let userId = db.users.aggregate([{$sample: {size: 1}}]).toArray()[0]._id
+print(userId)
+db.reviews.deleteMany({user_id: userId})
+/* 14. Создать разреженный индекс для товаров по полю sku */
+db.products.createIndex({sku: 1}, {sparse: true})
+

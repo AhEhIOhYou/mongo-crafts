@@ -1,0 +1,116 @@
+/* 1. Найти все заказы данного пользователя */
+let userId = db.users.aggregate([{$sample: {size: 1}}]).toArray()[0]._id
+print(userId)
+db.orders.find({user_id: userId})
+/* 2. Запросить пользователя, которому принадлежит конкретный заказ. */
+let orderId = db.orders.aggregate([{$sample: {size: 1}}]).toArray()[0]._id
+let userId = db.orders.findOne({_id: orderId}).user_id
+if (userId) {
+    db.users.findOne({_id: userId})
+} else {
+    print("Empty")
+}
+/* 3. Запрос находит товар с кратким названием ... */
+let product = db.products.aggregate([{$sample: {size: 1}}]).toArray()[0]
+print(product.slug)
+db.products.findOne({slug: product.slug})
+/* 4. Получить информацию о категории товара с кратким названием ... */
+let product = db.products.aggregate([{$sample: {size: 1}}]).toArray()[0]
+print(product.slug)
+let catId = db.products.findOne({slug: product.slug}).main_cat_id
+db.categories.findOne({_id: catId})
+/* 5. Запрос извлекает все обзоры, относящиеся к данном товару. */
+let productId = db.products.aggregate([{$sample: {size: 1}}]).toArray()[0]._id
+print(product._id)
+db.reviews.find({product_id: productId})
+/* 6. Отображать отзывы в определенном порядке, например, сортировать
+результаты запроса по количеству проголосовавших за полезность отзыва. */
+let productId = db.products.aggregate([{$sample: {size: 1}}]).toArray()[0]._id
+print(product._id)
+db.reviews.find({product_id: productId}).sort({helpful_votes: -1})
+/* 7. Просмотр корневых категорий, в которых нет товаров. */
+let parentCats = db.categories.find({parent_id: null}).toArray()
+let res = []
+parentCats.forEach((cat) => {
+    let count = db.products.find({main_cat_id: cat._id}).count()
+    if (count === 0) {
+        res.push(cat)
+    }
+})
+if (res.length > 0) {
+    print(res)
+} else {
+    print("Empty")
+}
+/* 8. Найти всех пользователей, проживающих в Long Beach. */
+db.users.find({addresses: {$elemMatch: {city: "Long Beach"}}})
+/* 9. Сгруппировать пользователей по приобретаемым ими товарам, ограничить результирующий набор заказами, сделанными в определенный период времени */
+db.orders.aggregate([
+    {$match: {created_at: {$gte: ISODate("2015-01-01T00:00:00.000Z"), $lte: ISODate("2019-12-31T00:00:00.000Z")}}},
+    {$unwind: "$lines_items"},
+    {$group: {_id: "$lines_items._id", user: {$push: "$user_id"}, count: {$sum: 1}}},
+    {$sort: {count: -1}},
+])
+/* 10. Построить составной индекс по артикулу и дате покупки */
+db.orders.createIndex({"lines_items.sku": 1, "created_at": 1})
+/* 11. Запрос на поиск всех товаров, принадлежащих хотя бы одной из категорий */
+let cats = db.categories.find({}).toArray()
+let catsIds = []
+cats.forEach((cat) => {
+    catsIds.push(cat._id)
+})
+db.products.find({main_cat_id: {$in: catsIds}})
+/* 12. Поиск товаров либо синего цвета (w) либо произведенных компанией Xyzzy. */
+db.products.find({$or: [{"details.color": "w"}, {"details.manufactured": "Xyzzy"}]})
+/* 13. Найти все товары, имеющие одновременно теги equipment(оборудование) и тег garden(сад). */
+db.products.find({tags: {$all: ["equipment", "garden"]}})
+/* 14. Поиск всех товаров производства фирмы ACME без тега gardering(садоводство) */
+db.products.find({"details.manufactured": "Acme", tags: {$nin: ["gardening"]}})
+/* 15. Найти всех пользователей, фамилии которых не начинаются с буквы B. */
+db.users.find({"last_name": {$not: /^B/}})
+/* 16. Найти товары, помеченные одним из тегов gift или holiday и одним из тегов gardering или landscaping. */
+db.products.find({
+    $and: [
+        {tags: {$in: ["gift", "holiday"]}},
+        {tags: {$in: ["gardening", "landscaping"]}}
+    ]
+})
+/* 17. Запросить товары, для которых не заданы цвета. */
+db.products.find({"details.color": {$exists: false}})
+/* 18. Поиск товара c тегом “soil”(почва). */
+db.products.find({tags: "soil"})
+/* 19. Можно считать, что в нулевом элементе массива addresses всегда хранится
+основной адрес доставки. Найти всех пользователей, для которых основной адрес доставки находится в Sacramento */
+db.users.find({"addresses.0.city": "Sacramento"})
+/* 20. Найти всех пользователей, домашний адрес которых находится в Charlotte. */
+db.users.find({"addresses": {$elemMatch: {city: "Charlotte", name: "home"}}})
+/* 21. Найти пользователей, имеющих ровно три адреса. */
+db.users.find({addresses: {$size: 3}})
+/* 22. Запрос на получение отзывов данного пользователя, содержащих в тексте слово best или worst (без учета регистра). */
+db.reviews.find({$or: [{text: /best/i}, {text: /worst/i}]})
+/* 23. Найти документы, в которых идентификатор хранится в виде строки. */
+db.products.find({_id: {$type: "string"}})
+/* 24. Вернуть первые 12 отзывов или последние 5. */
+db.reviews.find().sort({date: 1}).limit(12)
+db.reviews.find().sort({date: -1}).limit(5)
+/* 25. Пропустить первые 24 отзыва и возвратить не более 12 отзывов. */
+db.reviews.find().sort({date: 1}).skip(24).limit(12)
+/* TODO 26. Подсчитать общее число голосов, отданных за все отзывы одного пользователя, а также усреднить число голосов по всем отзывам каждого пользователя. */
+db.reviews.aggregate([
+    {$group: {_id: "$user_id", total: {$sum: "$helpful_votes"}, average: {$avg: "$helpful_votes"}}},
+    {$sort: {_id: 1}}
+])
+/* 27. Получить статистику по продажам. Сколько товаров продано в каждом месяце? */
+db.orders.aggregate([
+    {$unwind: "$lines_items"},
+    {$group: {_id: {$month: "$created_at"}, total: {$sum: "$lines_items.quantity"}}},
+    {$sort: {_id: 1}}
+])
+/* 28. Найти отзыв, за который подано наибольшее число голосов. */
+db.reviews.find().sort({helpful_votes: -1}).limit(1)
+/* 29. Найти отзыв, за который подано наименьшее число голосов. */
+db.reviews.find().sort({helpful_votes: 1}).limit(1)
+/* 30. Отобрать различные теги для товаров из категории «cat #2» */
+let catId = db.categories.findOne({name: "cat #2"})._id
+db.products.distinct("tags", {main_cat_id: catId})
+
