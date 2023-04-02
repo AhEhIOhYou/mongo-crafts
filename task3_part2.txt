@@ -20,6 +20,49 @@ db.users.updateOne(
 /* 5. Обновить средний'рейтинг товара при добавлении нового отзыва. */
 
 /* 6.Обновить название категории, включая документы -потомки. */
+let newName = "New Category Name" + Math.floor(Math.random() * 1000);
+let categoryId = db.categories.aggregate(
+    [
+        {$sample: {size: 1}}
+    ]
+).next()._id;
+
+print(categoryId)
+
+db.categories.updateOne(
+    {_id: categoryId},
+    {$set: {name: newName}}
+);
+
+/* 7. Обновить информацию об общем количестве голосов, при добавлении нового проголосовавшего. Учесть его голос в том случае, если он ранее не голосовал. */
+let userId = db.users.aggregate([{$sample: {size: 1}}]).toArray()[0]._id
+let review = db.reviews.aggregate([{$sample: {size: 1}}]).toArray();
+if (review[0].voter_ids.indexOf(userId) == -1) {
+    print("not voted")
+    db.reviews.updateOne(
+        {_id: review[0]._id},
+        {$inc: {votes: 1}, $addToSet: {votes_ids: userId}}
+    )
+} else {
+    print("already voted")
+}
+
+/* 8. Обновить документ  с данным заказом, добавив один новый товар, изменив общую сумму, добавить ещё одну позицию товара из корзины в заказ. */
+let orderId = db.orders.aggregate([
+    {$sample: {size: 1}},
+]).next()._id;
+
+let product = db.products.aggregate([
+    {$sample: {size: 1}},
+]).toArray();
+
+db.orders.updateOne(
+    {_id: orderId},
+    {
+        $addToSet: {items: {product: product[0]._id, quantity: Math.floor(Math.random() * 10)}},
+        $set: {total: product[0].price * Math.floor(Math.random() * 10)}
+    }
+)
 
 /* 9. Перевести заказ из состояния "CART" в состояние "PENDING" . */
 let orderId = db.orders.aggregate([
